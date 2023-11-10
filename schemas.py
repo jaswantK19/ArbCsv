@@ -1,6 +1,15 @@
-import pandas as pd
+from pydantic import BaseModel
+import datetime
 
-def get_schema(file_path: str):
-    df = pd.read_csv(file_path)
-    return df
 
+class UserCreate(BaseModel):
+    username: str
+    email: str
+    password: str
+
+class TokenCreate(BaseModel):
+    user_id: int
+    access_token: str
+    refresh_toke: str
+    status: bool
+    created_date: datetime.datetime
