@@ -19,7 +19,6 @@ class TokenTable(Base):
     user_id = Column(Integer)
     access_token = Column(String, primary_key= True)
     refresh_token = Column(String, nullable=False)
-    status = Column(Boolean)
     created_date = Column(DateTime, default=datetime.datetime.now)
 
 

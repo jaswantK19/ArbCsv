@@ -1,11 +1,14 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import SessionLocal
+from auth_bearer import JWTBearer
 import schemas
+import datetime
 import models
 import utils
 import os
+import jwt
 import shutil
 
 
@@ -30,9 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 UPLOADS_DIR = "uploads"
-
 
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
@@ -51,6 +52,56 @@ async def register_user(user: schemas.UserCreate, session: Session = Depends(get
     session.refresh(new_user)
 
     return {"message":"user created successfully"}
+
+@app.post('/login')
+async def login_user(request: schemas.LoginRequest, db :Session = Depends(get_session)):
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email is Invalid")
+    
+    encryptedPass = user.password
+
+    if not utils.verify_password(request.password, encryptedPass):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Password is Invalid"
+        )
+    
+    access = utils.create_access_token(user.user_id)
+    refresh = utils.create_refresh_token(user.user_id)
+
+    existing_token = db.query(models.TokenTable).filter(models.TokenTable.user_id == user.user_id).first()
+
+    if existing_token:
+        # Token already exists, no need to add a new one
+        access = existing_token.access_token
+        refresh = existing_token.refresh_token
+    else:
+        # Token doesn't exist, add a new one
+        access = utils.create_access_token(user.user_id)
+        refresh = utils.create_refresh_token(user.user_id)
+        
+        token_db = models.TokenTable(user_id=user.user_id, access_token=access, refresh_token=refresh)
+        db.add(token_db)
+        db.commit()
+        db.refresh(token_db)
+    
+    return {
+        "access_token" : access,
+        "refresh_token": refresh
+    }
+
+
+@app.post('/logout')
+async def logout_user(request: schemas.LogoutRequest, db: Session = Depends(get_session)):
+    token = db.query(models.TokenTable).filter(models.TokenTable.user_id == request.user_id).first()
+    if token:
+        # Token exists, delete it
+        db.delete(token)
+        db.commit()
+        return {"message": "Logout successful"}
+    else:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Token not found")
 
 @app.post("/upload")
 async def create_upload_file(file: UploadFile = File(...)):

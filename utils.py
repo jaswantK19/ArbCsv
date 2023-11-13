@@ -22,7 +22,7 @@ def create_access_token(subject: Union[str, Any], expires_delta: int = None) -> 
     if expires_delta is not None:
         expires_delta = datetime.utcnow() + expires_delta
     else:
-        expires_delta = datetime.utcnow() + timedelta(minutes=os.getenv("ACCESS_TOKEN_EXPIRY_MIN"))
+        expires_delta = datetime.utcnow() + timedelta(minutes=int(os.getenv("ACCESS_TOKEN_EXPIRY_MIN")))
     
     to_encode = {"exp": expires_delta, "sub": str(subject)}
     encoded_jwt = jwt.encode(to_encode, os.getenv("JWT_SECRET_KEY", "HS256"))
@@ -32,7 +32,7 @@ def create_refresh_token(subject: Union[str, Any], expires_delta: int = None) ->
     if expires_delta is not None:
         expires_delta = datetime.utcnow() + expires_delta
     else:
-        expires_delta = datetime.utcnow() + timedelta(minutes=os.getenv("ACCESS_TOKEN_EXPIRY_MIN"))
+        expires_delta = datetime.utcnow() + timedelta(minutes=int(os.getenv("ACCESS_TOKEN_EXPIRY_MIN")))
     
     to_encode = {"exp": expires_delta, "sub": str(subject)}
     encoded_jwt = jwt.encode(to_encode, os.getenv("JWT_REFRESH_SECRET_KEY"), 'HS256')

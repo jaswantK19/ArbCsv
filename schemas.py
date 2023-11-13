@@ -11,5 +11,11 @@ class TokenCreate(BaseModel):
     user_id: int
     access_token: str
     refresh_toke: str
-    status: bool
     created_date: datetime.datetime
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class LogoutRequest(BaseModel):
+    user_id: int
