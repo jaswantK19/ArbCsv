@@ -20,7 +20,7 @@ class TokenTable(Base):
     access_token = Column(String, primary_key= True)
     refresh_token = Column(String, nullable=False)
     created_date = Column(DateTime, default=datetime.datetime.now)
-
+    status = Column(Boolean, nullable=False)
 
 class Uploads(Base):
     __tablename__ = "uploads"

@@ -11,7 +11,12 @@ class TokenCreate(BaseModel):
     user_id: int
     access_token: str
     refresh_toke: str
+    status: bool
     created_date: datetime.datetime
+
+class TokenSchema(BaseModel):
+    access_token: str
+    refresh_token: str
 
 class LoginRequest(BaseModel):
     email: str

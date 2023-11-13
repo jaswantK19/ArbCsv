@@ -10,7 +10,8 @@ dotenv.load_dotenv()
 
 def decodeJWT(jwtToken: str):
     try:
-        payload = jwt.decode(jwtToken, os.getenv("JWT_SECRET_KEY", "HS256"))
+        payload = jwt.decode(jwtToken, os.getenv("JWT_SECRET_KEY"), "HS256")
+
         return payload
     except InvalidTokenError:
         return None
@@ -36,6 +37,7 @@ class JWTBearer(HTTPBearer):
 
         try:
             payload = decodeJWT(jwtoken)
+            print(payload)
         except:
             payload = None
         if payload:
