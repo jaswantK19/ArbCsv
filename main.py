@@ -19,10 +19,11 @@ def get_session():
     finally:
         session.close()
 
+
 app = FastAPI()
 
 origins = [
-    "http://localhost:8080", 
+    "http://localhost:8080",
 ]
 
 app.add_middleware(
@@ -36,6 +37,7 @@ app.add_middleware(
 UPLOADS_DIR = "uploads"
 
 os.makedirs(UPLOADS_DIR, exist_ok=True)
+
 
 @app.post('/register')
 async def register_user(user: schemas.UserCreate, session: Session = Depends(get_session)):
@@ -51,9 +53,10 @@ async def register_user(user: schemas.UserCreate, session: Session = Depends(get
     session.commit()
     session.refresh(new_user)
 
-    return {"message":"user created successfully"}
+    return {"message": "user created successfully"}
 
-@app.post('/login' ,response_model=schemas.TokenSchema)
+
+@app.post('/login', response_model=schemas.TokenSchema)
 def login(request: schemas.LoginRequest, db: Session = Depends(get_session)):
     user = db.query(models.User).filter(models.User.email == request.email).first()
     if user is None:
@@ -64,11 +67,11 @@ def login(request: schemas.LoginRequest, db: Session = Depends(get_session)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect password"
         )
-    
-    access=utils.create_access_token(user.user_id)
+
+    access = utils.create_access_token(user.user_id)
     refresh = utils.create_refresh_token(user.user_id)
 
-    token_db = models.TokenTable(user_id=user.user_id,  access_token=access,  refresh_token=refresh, status=True)
+    token_db = models.TokenTable(user_id=user.user_id, access_token=access, refresh_token=refresh, status=True)
     db.add(token_db)
     db.commit()
     db.refresh(token_db)
@@ -77,28 +80,31 @@ def login(request: schemas.LoginRequest, db: Session = Depends(get_session)):
         "refresh_token": refresh,
     }
 
+
 @app.post('/logout')
 def logout(dependencies=Depends(JWTBearer()), db: Session = Depends(get_session)):
-    token=dependencies
+    token = dependencies
     payload = jwt.decode(token, os.getenv("JWT_SECRET_KEY"), "HS256")
     user_id = payload['sub']
     token_record = db.query(models.TokenTable).all()
-    info=[]
-    for record in token_record :
-        print("record",record)
-        if (datetime.datetime.utcnow() - record.created_date).days >1:
+    info = []
+    for record in token_record:
+        print("record", record)
+        if (datetime.datetime.utcnow() - record.created_date).days > 1:
             info.append(record.user_id)
     if info:
         existing_token = db.query(models.TokenTable).where(models.TokenTable.user_id.in_(info)).delete()
         db.commit()
-        
-    existing_token = db.query(models.TokenTable).filter(models.TokenTable.user_id == user_id, models.TokenTable.access_token==token).first()
+
+    existing_token = db.query(models.TokenTable).filter(models.TokenTable.user_id == user_id,
+                                                        models.TokenTable.access_token == token).first()
     if existing_token:
-        existing_token.status=False
+        existing_token.status = False
         db.add(existing_token)
         db.commit()
         db.refresh(existing_token)
-    return {"message":"Logout Successfully"} 
+    return {"message": "Logout Successfully"}
+
 
 @app.post("/upload")
 async def create_upload_file(file: UploadFile = File(...)):
@@ -108,7 +114,3 @@ async def create_upload_file(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, file_object)
 
     return {"filename": file.filename, "saved_path": file_path}
-
-
-
-

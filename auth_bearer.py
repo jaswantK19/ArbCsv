@@ -8,14 +8,15 @@ from models import TokenTable
 
 dotenv.load_dotenv()
 
-def decodeJWT(jwtToken: str):
+
+def decode_jwt(jwt_token: str):
     try:
-        payload = jwt.decode(jwtToken, os.getenv("JWT_SECRET_KEY"), "HS256")
+        payload = jwt.decode(jwt_token, os.getenv("JWT_SECRET_KEY"), "HS256")
 
         return payload
     except InvalidTokenError:
         return None
-    
+
 
 class JWTBearer(HTTPBearer):
     def __init__(self, auto_error: bool = True):
@@ -32,16 +33,17 @@ class JWTBearer(HTTPBearer):
         else:
             raise HTTPException(status_code=403, detail="Invalid authorization code.")
 
-    def verify_jwt(self, jwtoken: str) -> bool:
-        isTokenValid: bool = False
+    def verify_jwt(self, token: str) -> bool:
+        is_token_valid: bool = False
 
         try:
-            payload = decodeJWT(jwtoken)
+            payload = decode_jwt(token)
             print(payload)
         except:
             payload = None
         if payload:
-            isTokenValid = True
-        return isTokenValid
+            is_token_valid = True
+        return is_token_valid
+
 
 jwt_bearer = JWTBearer()

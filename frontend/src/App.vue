@@ -1,47 +1,26 @@
 <template>
-  <div id="app">
-    <input type="file" ref="fileInput" @change="handleFileChange" />
-    <button @click="uploadFile">Upload</button>
-  </div>
+  <v-app>
+    <NavBar>
+    </NavBar>
+      <v-main>
+      <router-view>
+      </router-view>
+    </v-main>
+  </v-app>
 </template>
 
 <script>
-export default {
-  data() {
-    return {
-      selectedFile: null,
-    };
-  },
-  methods: {
-    handleFileChange(event) {
-      this.selectedFile = event.target.files[0];
-    },
-    uploadFile() {
-      const formData = new FormData();
-      formData.append("file", this.selectedFile);
+import NavBar from './components/NavBar.vue'
 
-      this.$axios
-        .post("http://localhost:8000/upload", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
-        .then((response) => {
-          console.log(response.data);
-          this.$refs.fileInput.value = null;
-          this.selectedFile = null;
-        })
-        .catch((error) => {
-          console.error("Error uploading file:", error);
-        });
-    },
-  },
+export default {
+  name: 'App',
+
+  components: {
+    NavBar
+},
+
+  data: () => ({
+    //
+  }),
 };
 </script>
-
-<style>
-#app {
-  text-align: center;
-  margin-top: 60px;
-}
-</style>
