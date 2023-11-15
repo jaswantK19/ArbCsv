@@ -1,5 +1,4 @@
 <template>
-
     <v-container>
         <v-navigation-drawer v-model="drawer" app>
           <v-list>
@@ -15,24 +14,29 @@
           <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
           <v-toolbar-title>My App</v-toolbar-title>
           <v-spacer></v-spacer>
-          <v-btn v-if="isLoggedIn" @click="logout">Logout</v-btn>
+          <v-btn v-if="loggedIn" @click="handleLogout">Logout</v-btn>
           <v-btn v-else @click="login">Login</v-btn>
         </v-app-bar>
     </v-container>
 </template>
 
 <script>
+import { mapActions } from 'vuex';
 export default {
   data() {
     return {
-      drawer: false,
-      isLoggedIn: localStorage.getItem('loggedIn'), // Change this based on user authentication status
+      drawer: false, // Change this based on user authentication status
       items: [
         { title: 'Home', icon: 'mdi-home', path: '/dashboard' },
         { title: 'Uploads', icon: 'mdi-cloud-upload', path: '/uploads' }
       ]
     };
   },
+  computed : {
+        loggedIn() {
+          return this.$store.getters.isLoggedIn
+        }
+    },
   methods: {
     navigate(item) {
         if (this.$route.path !== item.path) {
@@ -41,10 +45,13 @@ export default {
     }
     },
     login() {
-        this.$router.push('/login')
+      if (this.$route.path !== '/login'){
+        this.$router.push('/login');
+      }
     },
-    logout() {
-      localStorage.delete('access_token', 'refresh_token', )
+    ...mapActions(['logout']),
+    handleLogout() {
+      this.logout()
     }
   }
 };

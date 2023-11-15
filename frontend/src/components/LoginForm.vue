@@ -15,9 +15,7 @@
       <v-divider class="divider" />
       <v-card-actions>
         <span class="card-actions">
-  
-            <v-btn color="success" @click="login">Login</v-btn>
-         
+            <v-btn color="success" @click="handleLogin" >Login</v-btn>
           <div class="new-user-message">New User? <router-link to="/register"> Register</router-link></div>
         </span>
       </v-card-actions>
@@ -26,6 +24,8 @@
 </template>
   
   <script>
+
+  import { mapActions } from "vuex";
   
   export default {
     data() {
@@ -35,13 +35,21 @@
         showPassword: false
       };
     },
+
+    
     methods: {
-      login() {
-        this.$store.dispatch('auth/login', {
-        email: this.email,
-        password: this.password,
-    })
-      }
+
+      ...mapActions(['login']),
+    handleLogin() {
+      this.login({ email: this.email, password: this.password })
+        .then(() => {
+          console.log(this.$store.getters.isLoggedIn); // should log true if login was successful
+          this.$router.push('/dashboard');
+        })
+        .catch(error => {
+          console.log(error)
+        });
+    },
     },
   };
   </script>
