@@ -7,7 +7,7 @@ Vue.use(Vuex)
 export const store = new Vuex.Store(
     {
         state: {
-            loggedIn: false
+            loggedIn: localStorage.getItem('loggedIn')
         },
 
         mutations: {
@@ -32,7 +32,8 @@ export const store = new Vuex.Store(
                       localStorage.setItem('access_token', access_token);
                       localStorage.setItem('refresh_token', refresh_token);
                       localStorage.setItem('loggedIn', true);
-                      commit('SET_LOGIN_STATE', true); // Mutate the login state to true
+                      commit('SET_LOGIN_STATE', localStorage.getItem('loggedIn')); // Mutate the login state to true
+                      console.log(localStorage.getItem('loggedIn'))
                       resolve();
                     })
                     .catch(error => {

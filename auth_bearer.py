@@ -4,7 +4,6 @@ import dotenv
 from jwt.exceptions import InvalidTokenError
 from fastapi import FastAPI, Request, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from models import TokenTable
 
 dotenv.load_dotenv()
 
@@ -16,7 +15,6 @@ def decode_jwt(jwt_token: str):
         return payload
     except InvalidTokenError:
         return None
-
 
 class JWTBearer(HTTPBearer):
     def __init__(self, auto_error: bool = True):

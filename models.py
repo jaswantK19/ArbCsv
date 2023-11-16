@@ -25,7 +25,7 @@ class TokenTable(Base):
 class Uploads(Base):
     __tablename__ = "uploads"
     upload_id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True, nullable=False)
+    name = Column(String, nullable=False)
     src = Column(String, nullable=False)
     user_id = Column(Integer, ForeignKey('users.user_id'))
     user = relationship('User', back_populates='uploads')

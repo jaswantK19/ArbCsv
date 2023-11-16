@@ -56,6 +56,12 @@ async def register_user(user: schemas.UserCreate, session: Session = Depends(get
     return {"message": "user created successfully"}
 
 
+@app.get('/users/{user_id}')
+def get_username(user_id: int, db: Session = Depends(get_session)):
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
+    return user.username
+
+
 @app.post('/login', response_model=schemas.TokenSchema)
 def login(request: schemas.LoginRequest, db: Session = Depends(get_session)):
     user = db.query(models.User).filter(models.User.email == request.email).first()
@@ -106,11 +112,60 @@ def logout(dependencies=Depends(JWTBearer()), db: Session = Depends(get_session)
     return {"message": "Logout Successfully"}
 
 
+def get_current_user(db: Session = Depends(get_session), token=Depends(JWTBearer())):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="User not authorized",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
+    try:
+        payload = jwt.decode(token, os.getenv("JWT_SECRET_KEY"), "HS256")
+        user_id = payload['sub']
+
+    except:
+        raise credentials_exception
+
+    user = db.query(models.User).filter(models.User.user_id == user_id).first()
+    if user is None:
+        raise credentials_exception
+    return user
+
+
 @app.post("/upload")
-async def create_upload_file(file: UploadFile = File(...)):
+async def create_upload_file(file: UploadFile = File(...), current_user: models.User = Depends(get_current_user),
+                             db: Session = Depends(get_session)):
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not Authenticated"
+        )
     file_path = os.path.join(UPLOADS_DIR, file.filename)
 
     with open(file_path, "wb") as file_object:
         shutil.copyfileobj(file.file, file_object)
-
+    db_upload = models.Uploads(name=file.filename, src=file_path, user_id=current_user.user_id)
+    db.add(db_upload)
+    db.commit()
+    db.refresh(db_upload)
     return {"filename": file.filename, "saved_path": file_path}
+
+
+@app.get('/getUploads', response_model=None)
+async def get_uploads(db: Session = Depends(get_session), current_user: models.User = Depends(get_current_user)):
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized!"
+        )
+    uploads = db.query(models.Uploads).filter(models.Uploads.user_id == current_user.user_id).all()
+    return uploads
+
+
+@app.delete('/delete/{upload_id}')
+def delete_file(upload_id: int, db: Session = Depends(get_session)):
+    fileItem = db.get(models.Uploads, upload_id)
+    if not fileItem:
+        raise HTTPException(status_code=404, detail='File Not Found')
+    db.delete(fileItem)
+    db.commit()
+    return {"Message": "Delete Successful"}

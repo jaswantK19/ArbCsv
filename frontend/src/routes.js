@@ -1,6 +1,7 @@
 import LoginForm from './components/LoginForm'
 import RegistrationForm from './components/RegistrationForm'
 import MainDashboard from './components/MainDashboard'
+import UploadsList from './components/UploadsList'
 
 export default [
     {
@@ -18,5 +19,14 @@ export default [
     {
         path: "/dashboard",
         component: MainDashboard 
+    },
+    {
+        path: "/Sdashboard",
+        component: MainDashboard 
+    },
+    {
+        path: '/uploads',
+        component: UploadsList
     }
+
 ]

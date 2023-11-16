@@ -1,8 +1,16 @@
 <template>
     <v-container>
         <v-navigation-drawer v-model="drawer" app>
-          <v-list>
+          <v-list v-if="loggedIn">
             <v-list-item v-for="(item, index) in items" :key="index" @click="navigate(item)">
+              <v-list-item-icon>
+                <v-icon>{{ item.icon }}</v-icon>
+              </v-list-item-icon>
+              <v-list-item-title>{{ item.title }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+          <v-list v-else>
+            <v-list-item v-for="(item, index) in itemsWhenNotLoggedIn" :key="index" @click="navigate(item)">
               <v-list-item-icon>
                 <v-icon>{{ item.icon }}</v-icon>
               </v-list-item-icon>
@@ -25,10 +33,14 @@ import { mapActions } from 'vuex';
 export default {
   data() {
     return {
-      drawer: false, // Change this based on user authentication status
+      drawer: false, 
       items: [
         { title: 'Home', icon: 'mdi-home', path: '/dashboard' },
         { title: 'Uploads', icon: 'mdi-cloud-upload', path: '/uploads' }
+      ],
+      itemsWhenNotLoggedIn: [
+        {title: 'Home', icon: 'mdi-home', path: '/Sdashboard'},
+        {title: 'About us', icon: 'mdi-information', path: '/about'}
       ]
     };
   },
@@ -52,6 +64,9 @@ export default {
     ...mapActions(['logout']),
     handleLogout() {
       this.logout()
+      if (this.$route.path !== '/dashboard'){
+        this.$router.push('/dashboard');
+      }
     }
   }
 };
