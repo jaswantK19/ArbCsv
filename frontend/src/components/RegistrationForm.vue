@@ -19,9 +19,9 @@
 
       <v-card-actions>
         <span class="card-actions">
-          <router-link to="/dashboard" @click.native="register">
-            <v-btn class="register-btn" color="success">Register</v-btn>
-          </router-link>
+          
+            <v-btn class="register-btn" color="success" @click="handleRegister" >Register</v-btn>
+          
 
           <div class="registered-message">Already Registered? <router-link to="/login"> Login</router-link></div>
         </span>
@@ -31,7 +31,8 @@
 </template>
 
 <script>
-import axios from "axios";
+
+import { mapActions } from "vuex";
 
 export default {
   data() {
@@ -43,18 +44,17 @@ export default {
     };
   },
   methods: {
-    register() {
-      axios
-        .post("http://127.0.0.1:8000/register", {
-          username: this.name,
-          email: this.email,
-          password: this.password,
-        })
-        .then((response) => {
-          console.log(response.data.message);
-        })
-        .catch((error) => {
-          console.error("Registration error:", error.response.data.detail);
+
+    ...mapActions(['register']),
+    handleRegister() {
+      this.register({username:this.name, email: this.email, password: this.password })
+        .then(() => {
+          console.log("Success");
+          this.$router.push('/dashboard');
+        }
+        )
+        .catch(error => {
+          console.log(error)
         });
     },
   },

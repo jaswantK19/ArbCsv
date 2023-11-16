@@ -13,6 +13,8 @@ class TokenCreate(BaseModel):
     refresh_toke: str
     status: bool
     created_date: datetime.datetime
+class UpdatedCSV(BaseModel):
+    data: str  # Assuming the updated CSV data will be sent as a string
 
 class TokenSchema(BaseModel):
     access_token: str

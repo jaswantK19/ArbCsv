@@ -1,9 +1,13 @@
+from operator import and_
+
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, status
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from auth_bearer import JWTBearer
 import schemas
+from schemas import UpdatedCSV
 import datetime
 import models
 import utils
@@ -139,17 +143,23 @@ async def create_upload_file(file: UploadFile = File(...), current_user: models.
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not Authenticated"
         )
-    file_path = os.path.join(UPLOADS_DIR, file.filename)
+
+    user_folder = str(current_user.user_id)
+    user_upload_dir = os.path.join(UPLOADS_DIR, user_folder)
+
+    if not os.path.exists(user_upload_dir):
+        os.makedirs(user_upload_dir)
+
+    file_path = os.path.join(user_upload_dir, file.filename)
 
     with open(file_path, "wb") as file_object:
         shutil.copyfileobj(file.file, file_object)
+
     db_upload = models.Uploads(name=file.filename, src=file_path, user_id=current_user.user_id)
     db.add(db_upload)
     db.commit()
     db.refresh(db_upload)
     return {"filename": file.filename, "saved_path": file_path}
-
-
 @app.get('/getUploads', response_model=None)
 async def get_uploads(db: Session = Depends(get_session), current_user: models.User = Depends(get_current_user)):
     if not current_user:
@@ -160,7 +170,58 @@ async def get_uploads(db: Session = Depends(get_session), current_user: models.U
     uploads = db.query(models.Uploads).filter(models.Uploads.user_id == current_user.user_id).all()
     return uploads
 
+@app.get('/viewFile/{upload_id}')
+async def view_file(upload_id: int, db: Session = Depends(get_session), current_user: models.User = Depends(get_current_user)):
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized Access"
+        )
+    file_record = db.query(models.Uploads).filter(and_(models.Uploads.upload_id == upload_id,
+                                                    models.Uploads.user_id == current_user.user_id)).first()
 
+    if not file_record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found"
+        )
+
+        # Construct the file path
+    file_path = file_record.src
+
+    # Check if the file exists
+    if not os.path.exists(file_path):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found"
+        )
+
+    # Open the file and read its content
+    with open(file_path, 'rb') as file:
+        file_content = file.read()
+
+    # Return the file content as a StreamingResponse
+    return StreamingResponse(
+        iter([file_content]),
+        media_type='text/csv',
+        headers={'Content-Disposition': f'attachment; filename="{os.path.basename(file_path)}"'}
+    )
+
+
+@app.put('/updateFile/{upload_id}')
+async def update_file(upload_id: int, updated_csv: UpdatedCSV):
+    # Logic to update the file with ID `upload_id`
+    # For simplicity, let's assume the updated CSV data is received as a string
+
+    # Retrieve the file path based on upload_id from your database
+    # Update the file content with the received data
+    file_path = f'/path/to/your/files/{upload_id}.csv'  # Replace this with your file path logic
+    try:
+        with open(file_path, 'w') as file:
+            file.write(updated_csv.data)
+        return {"message": "File updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update file: {str(e)}")
 @app.delete('/delete/{upload_id}')
 def delete_file(upload_id: int, db: Session = Depends(get_session)):
     fileItem = db.get(models.Uploads, upload_id)
